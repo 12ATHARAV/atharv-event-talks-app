@@ -57,6 +57,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (retryBtn) retryBtn.addEventListener('click', () => fetchReleaseNotes(true));
         if (resetFiltersBtn) resetFiltersBtn.addEventListener('click', resetFilters);
 
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        if (exportCsvBtn) exportCsvBtn.addEventListener('click', exportToCSV);
+
         // Filter tabs
         filterTabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -373,12 +376,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const cardFooter = document.createElement('div');
                 cardFooter.className = 'card-footer';
+                cardFooter.style.display = 'flex';
+                cardFooter.style.gap = '10px';
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = 'btn btn-secondary btn-sm';
+                copyBtn.style.padding = '8px 14px';
+                copyBtn.style.fontSize = '0.85rem';
+                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+                copyBtn.addEventListener('click', () => copyTextToClipboard(item.text, 'Release note copied to clipboard!'));
 
                 const tweetBtn = document.createElement('button');
-                tweetBtn.className = 'btn btn-card-action';
+                tweetBtn.className = 'btn btn-tweet btn-sm';
+                tweetBtn.style.padding = '8px 14px';
+                tweetBtn.style.fontSize = '0.85rem';
                 tweetBtn.innerHTML = '<i class="fa-brands fa-x-twitter"></i> Tweet';
                 tweetBtn.addEventListener('click', () => openTweetModal(item));
 
+                cardFooter.appendChild(copyBtn);
                 cardFooter.appendChild(tweetBtn);
 
                 cardEl.appendChild(header);
@@ -505,17 +520,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function copyTweetToClipboard() {
-        const text = tweetTextarea.value;
+    async function copyTextToClipboard(text, successMessage = 'Copied to clipboard!') {
         try {
             await navigator.clipboard.writeText(text);
-            showToast('Tweet copied to clipboard!');
+            showToast(successMessage);
         } catch (err) {
-            // Fallback for older browsers or permission denied
-            tweetTextarea.select();
-            document.execCommand('copy');
-            showToast('Tweet copied to clipboard!');
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast(successMessage);
+            } catch (e) {
+                console.error('Failed to copy', e);
+            }
+            document.body.removeChild(textarea);
         }
+    }
+
+    async function copyTweetToClipboard() {
+        const text = tweetTextarea.value;
+        await copyTextToClipboard(text, 'Tweet copied to clipboard!');
+    }
+
+    function exportToCSV() {
+        const data = state.filteredEntries;
+        if (!data || data.length === 0) {
+            showToast('No entries to export!');
+            return;
+        }
+        
+        const headers = ['Date', 'Type', 'Description', 'Link'];
+        const csvRows = [];
+        csvRows.push(headers.join(','));
+        
+        data.forEach(item => {
+            const row = [
+                `"${item.date.replace(/"/g, '""')}"`,
+                `"${item.type.replace(/"/g, '""')}"`,
+                `"${item.text.replace(/"/g, '""')}"`,
+                `"${item.link.replace(/"/g, '""')}"`
+            ];
+            csvRows.push(row.join(','));
+        });
+        
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `bigquery_releases_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('CSV exported successfully!');
     }
 
     function postTweetToTwitter() {
