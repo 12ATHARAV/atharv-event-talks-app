@@ -1,4 +1,4 @@
-# BigQuery Release Notes 
+# BigQuery Release Notes Tracker
 
 A sleek, modern web application built using **Python (Flask)** and **vanilla HTML5, CSS3, and JavaScript** that fetches, parses, and displays the latest Google Cloud BigQuery release notes. The app provides a beautiful user interface with a real-time feed, category filtering, search, and a built-in Twitter (X) composer to easily tweet about specific updates.
 
