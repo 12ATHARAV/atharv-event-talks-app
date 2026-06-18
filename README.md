@@ -47,5 +47,4 @@ A sleek, modern web application built using **Python (Flask)** and **vanilla HTM
    ```
    Open [http://127.0.0.1:5000](http://127.0.0.1:5000) in your browser.
 
-## 📄 License
-MIT License.
+
